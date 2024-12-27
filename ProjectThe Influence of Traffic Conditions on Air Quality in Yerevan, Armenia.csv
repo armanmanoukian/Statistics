@@ -1,0 +1,40 @@
+Location,Time_of_Day,Traffic_Category,Traffic_Jam,PM2.5,NO2
+Mashtots Avenue,Morning,Medium,5.6,35,40
+Mashtots Avenue,Afternoon,Medium,5.4,30,35
+Mashtots Avenue,Evening,High,6,45,50
+Komitas Avenue,Morning,Medium,5.2,32,38
+Komitas Avenue,Afternoon,Low,5.4,28,33
+Komitas Avenue,Evening,Medium,3.5,40,45
+Isakov Avenue,Morning,Medium,4.8,43,39
+Isakov Avenue,Afternoon,Low,5.4,34,34
+Isakov Avenue,Evening,High,6.6,50,47
+Tigran Mets Avenue,Morning,Medium,3.4,33,37
+Tigran Mets Avenue,Afternoon,Medium,5.8,31,36
+Tigran Mets Avenue,Evening,High,4.6,44,48
+Baghramyan Avenue,Morning,Medium,4.4,30,35
+Baghramyan Avenue,Afternoon,Low,6.6,27,32
+Baghramyan Avenue,Evening,High,3.8,38,43
+Abovyan Street,Morning,Medium,5,28,33
+Abovyan Street,Afternoon,Low,6,25,30
+Abovyan Street,Evening,Medium,5.8,36,40
+Arshakunyats Avenue,Morning,High,7,37,42
+Arshakunyats Avenue,Afternoon,Medium,4.4,34,39
+Arshakunyats Avenue,Evening,High,5.4,48,52
+Azatutyan Avenue,Morning,Medium,3.8,34,39
+Azatutyan Avenue,Afternoon,Low,3.8,29,34
+Azatutyan Avenue,Evening,High,5.6,42,47
+Yerevanian Highway,Morning,Medium,4.8,35,40
+Yerevanian Highway,Afternoon,Medium,5,30,35
+Yerevanian Highway,Evening,High,5,45,50
+Kievyan Street,Morning,Medium,7.6,34,39
+Kievyan Street,Afternoon,Low,4,29,34
+Kievyan Street,Evening,High,6.2,42,47
+Gai Avenue,Morning,Medium,6.6,35,40
+Gai Avenue,Afternoon,Medium,2.2,30,35
+Gai Avenue,Evening,High,6.4,45,50
+Tbilisyan Highway,Morning,Medium,3.2,33,37
+Tbilisyan Highway,Afternoon,Medium,7.8,31,36
+Tbilisyan Highway,Evening,High,6,44,48
+Bagratunyats Avenue,Morning,High,6,37,42
+Bagratunyats Avenue,Afternoon,Medium,3.8,34,39
+Bagratunyats Avenue,Evening,High,7.4,48,52

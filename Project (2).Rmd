@@ -1,0 +1,892 @@
+---
+title: "Project:The Influence of Traffic Conditions on Air Quality in Yerevan, Armenia"
+author: "Mariam Manukyan, Arman Manukyan"
+date: "2024-11-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("car")) install.packages("car")
+library(car)
+
+if (!require("lsmeans")) install.packages("lsmeans")
+library(lsmeans)
+
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+if (!require("emmeans")) install.packages("emmeans")
+library(emmeans)
+
+```
+
+# Load the data file 
+
+```{r Loading a data file}
+Traffic <- read.table(file.choose(), header = TRUE, sep = ",", quote = "\"", stringsAsFactors = FALSE, fileEncoding = "ISO-8859-1")
+
+# Display the first few rows and summary
+head(Traffic)
+summary(Traffic)
+
+# Open the data frame viewer
+View(Traffic)
+
+```
+#convert traffic to a categorical variable with "low," "medium," and "high" levels
+```{r }
+# Convert Traffic_Category, Location, and Time_of_Day to factors with specified levels
+Traffic <- Traffic %>%
+  mutate(
+    Traffic_Category = factor(Traffic_Category, levels = c("Low", "Medium", "High")),
+    Time_of_Day = factor(Time_of_Day, levels = c("Morning", "Afternoon", "Evening"))
+  )
+
+```
+
+# Descriptive Statistics
+```{r # Descriptive Statistics}
+
+# Descriptive Statistics
+traffic_summary <- Traffic %>%
+  group_by(Traffic_Category, Time_of_Day) %>%
+  summarize(mean_PM2.5 = mean(PM2.5, na.rm = TRUE),
+            mean_NO2 = mean(NO2, na.rm = TRUE))
+
+# Visualization
+ggplot(Traffic, aes(x = Traffic_Category, y = PM2.5, fill = Time_of_Day)) +
+  geom_boxplot() +
+  labs(title = "PM2.5 Levels by Traffic Jam and Time of Day",
+       x = "", y = "Average PM2.5(µg/m³) hourly")
+
+ggplot(Traffic, aes(x = Traffic_Category, y = NO2, fill = Time_of_Day)) +
+  geom_boxplot() +
+  labs(title = "NO2 Levels by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average NO2(µg/m³) hourly")
+
+```
+
+# Descriptive Statistics  # plotly
+```{r # Descriptive Statistics}
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Descriptive Statistics
+traffic_summary <- Traffic %>%
+  group_by(Traffic_Category, Time_of_Day) %>%
+  summarize(mean_PM2.5 = mean(PM2.5, na.rm = TRUE),
+            mean_NO2 = mean(NO2, na.rm = TRUE),
+            sd_PM2.5 = sd(PM2.5, na.rm = TRUE),
+            sd_NO2 = sd(NO2, na.rm = TRUE))
+
+# Display the summary to the user
+print(traffic_summary)
+
+# Visualization with plotly for PM2.5
+p1 <- ggplot(Traffic, aes(x = Traffic_Category, y = PM2.5, fill = Time_of_Day)) +
+  geom_boxplot() +
+  labs(title = "PM2.5 Levels by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average PM2.5 (µg/m³) hourly") +
+  theme_minimal()
+
+# Convert ggplot to plotly
+p1_plotly <- ggplotly(p1) %>%
+  layout(hovermode = "closest")
+
+# Visualization with plotly for NO2
+p2 <- ggplot(Traffic, aes(x = Traffic_Category, y =NO2, fill = Time_of_Day)) +
+  geom_boxplot() +
+  labs(title = "NO2 Levels by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average NO2 (µg/m³) hourly") +
+  theme_minimal()
+
+# Convert ggplot to plotly
+p2_plotly <- ggplotly(p2) %>%
+  layout(hovermode = "closest")
+
+# Display the interactive plots
+p1_plotly
+p2_plotly
+
+```
+
+
+```{r # ANCOVA for PM2.5  without interaction  uses only the main effects. }
+# Load necessary libraries
+library(car)
+library(emmeans)
+
+# Convert columns to appropriate data types
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Main effects model (simplest)
+main_effect_model <- lm(PM2.5 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+anova_main_effect <- Anova(main_effect_model, type = 2)  # Type II ANOVA
+print(anova_main_effect)
+
+# Post-hoc analysis
+emmeans_result <- emmeans(
+  main_effect_model,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust Traffic_Jam to its mean
+)
+print(emmeans_result)
+
+
+
+```
+
+```{r # ANCOVA for NO2  without interaction  uses only the main effects. }
+# Load necessary libraries
+library(car)
+library(emmeans)
+
+# Convert columns to appropriate data types
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Main effects model (simplest)
+main_effect_model <- lm(NO2 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+anova_main_effect <- Anova(main_effect_model, type = 2)  # Type II ANOVA
+print(anova_main_effect)
+
+# Post-hoc analysis
+emmeans_result <- emmeans(
+  main_effect_model,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust Traffic_Jam to its mean
+)
+print(emmeans_result)
+
+
+
+```
+
+```{r #ANCOVA for PM2.5 and NO2 combined   without interaction  uses only the main effects.}
+# Load necessary libraries
+library(car)
+library(emmeans)
+
+# Convert columns to appropriate data types
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Perform ANCOVA for PM2.5 levels
+main_effect_model_pm25 <- lm(PM2.5 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+anova_main_effect_pm25 <- Anova(main_effect_model_pm25, type = 2)  # Type II ANOVA
+print(anova_main_effect_pm25)
+
+# Post-hoc analysis for PM2.5
+emmeans_pm25 <- emmeans(
+  main_effect_model_pm25,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust Traffic_Jam to its mean
+)
+print(emmeans_pm25)
+
+# Perform ANCOVA for NO2 levels
+main_effect_model_no2 <- lm(NO2 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+anova_main_effect_no2 <- Anova(main_effect_model_no2, type = 2)  # Type II ANOVA
+print(anova_main_effect_no2)
+
+# Post-hoc analysis for NO2
+emmeans_no2 <- emmeans(
+  main_effect_model_no2,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust Traffic_Jam to its mean
+)
+print(emmeans_no2)
+
+```
+
+
+```{r Two-Way ANCOVA for PM2.5 with Interaction and Main Effects (Traffic Jam, Time of Day, and Location)" }
+
+# Load necessary libraries
+library(car)     # For Anova()
+library(emmeans) # For post-hoc analysis
+
+# Convert columns to factors
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Build the full model with two-way interaction
+interaction_model <- lm(PM2.5 ~ Traffic_Jam * Time_of_Day + Location, data = Traffic)
+
+# Perform Type II ANOVA for the full model
+anova_interaction <- Anova(interaction_model, type = 2) # Type II ANCOVA
+print(anova_interaction)
+
+# Check significance of the interaction term
+if (anova_interaction["Traffic_Jam:Time_of_Day", "Pr(>F)"] > 0.05) {
+  # Simplify the model by removing the interaction term
+  simplified_model <- lm(PM2.5 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+  final_model <- simplified_model
+} else {
+  final_model <- interaction_model
+}
+
+# Perform Type II ANOVA on the final model
+anova_final <- Anova(final_model, type = 2)
+print(anova_final)
+
+# Post-hoc analysis with emmeans
+emmeans_result <- emmeans(
+  final_model,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam)) # Adjust Traffic_Jam to its mean
+)
+print(emmeans_result)
+
+
+
+```
+
+```{r Two-Way ANCOVA for NO2 with Interaction and Main Effects (Traffic Jam, Time of Day, and Location)" }
+
+# Load necessary libraries
+library(car)     # For Anova()
+library(emmeans) # For post-hoc analysis
+
+# Convert columns to factors
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Build the full model with two-way interaction
+interaction_model <- lm(NO2 ~ Traffic_Jam * Time_of_Day + Location, data = Traffic)
+
+# Perform Type II ANOVA for the full model
+anova_interaction <- Anova(interaction_model, type = 2) # Type II ANCOVA
+print(anova_interaction)
+
+# Check significance of the interaction term
+if (anova_interaction["Traffic_Jam:Time_of_Day", "Pr(>F)"] > 0.05) {
+  # Simplify the model by removing the interaction term
+  simplified_model <- lm(NO2 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+  final_model <- simplified_model
+} else {
+  final_model <- interaction_model
+}
+
+# Perform Type II ANOVA on the final model
+anova_final <- Anova(final_model, type = 2)
+print(anova_final)
+
+# Post-hoc analysis with emmeans
+emmeans_result <- emmeans(
+  final_model,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam)) # Adjust Traffic_Jam to its mean
+)
+print(emmeans_result)
+
+
+
+
+```
+
+# AOV ()
+```{r # ANCOVA for PM2.5 }
+## ANCOVA Analysis for PM2.5
+
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+
+# Check if interaction is significant
+interaction_model <- aov(PM2.5 ~ Traffic_Jam * Time_of_Day + Location, data = Traffic)
+summary(interaction_model)
+
+# If interaction is NOT significant, simplify the model
+if (summary(interaction_model)[[1]]["Traffic_Jam:Time_of_Day", "Pr(>F)"] > 0.05) {
+  ancova_pm25 <- aov(PM2.5 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+} else {
+  ancova_pm25 <- interaction_model
+}
+
+# Perform post-hoc analysis
+emmeans_result <- emmeans(
+  ancova_pm25,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust Traffic_Jam to its mean
+)
+emmeans_result
+
+
+```
+
+
+#AOV()
+```{r # ANCOVA for NO2}
+# Ensure categorical variables are properly defined as factors
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Check if interaction is significant
+interaction_model_no2 <- aov(NO2 ~ Traffic_Jam * Time_of_Day + Location, data = Traffic)
+summary(interaction_model_no2)
+
+# Decide whether to simplify the model
+if (summary(interaction_model_no2)[[1]]["Traffic_Jam:Time_of_Day", "Pr(>F)"] > 0.05) {
+  ancova_no2 <- aov(NO2 ~ Traffic_Jam + Time_of_Day + Location, data = Traffic)
+} else {
+  ancova_no2 <- interaction_model_no2
+}
+
+# Summary of the final ANCOVA model
+summary(ancova_no2)
+
+# Perform post-hoc analysis with adjustments for Traffic_Jam
+emmeans_no2 <- emmeans(
+  ancova_no2,
+  pairwise ~ Time_of_Day,
+  at = list(Traffic_Jam = mean(Traffic$Traffic_Jam))  # Adjust for mean Traffic_Jam
+)
+
+# Print pairwise comparisons
+emmeans_no2
+
+
+```
+
+
+
+```{r Ancova with ineraction }
+# Convert variables to appropriate types
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+
+# Perform Three-Way ANCOVA for PM2.5 levels
+three_way_ancova_pm25 <- aov(PM2.5 ~ Traffic_Jam +Traffic_Category *Location * Time_of_Day, data = Traffic)
+summary(three_way_ancova_pm25)
+
+# Perform Three-Way ANCOVA for NO2 levels
+three_way_ancova_no2 <- aov(NO2 ~ Traffic_Jam +Traffic_Category* Location * Time_of_Day, data = Traffic)
+summary(three_way_ancova_no2)
+
+```
+
+
+```{r Ancova without interaction  }
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category<- as.factor(Traffic$Traffic_Category)
+
+# Perform ANCOVA for PM2.5 levels
+ancova_pm25 <- aov(PM2.5 ~ Traffic_Jam + Location + Time_of_Day, data = Traffic)
+summary(ancova_pm25)
+
+# Perform ANCOVA for NO2 levels
+ancova_no2 <- aov(NO2 ~ Traffic_Jam + Location + Time_of_Day, data = Traffic)
+summary(ancova_no2)
+
+```
+
+```{r}
+# Convert variables to factors
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Simplified model with no three-way interaction
+lm_pm25 <- lm(PM2.5 ~ Traffic_Jam + Location + Time_of_Day + Traffic_Jam:Location, data = Traffic)
+
+# Perform Type III ANCOVA
+ancova_pm25 <- Anova(lm_pm25, type = "III")
+summary(ancova_pm25)
+
+
+```
+
+```{r}
+
+# Convert variables to appropriate types
+Traffic$Location <- as.factor(Traffic$Location)
+Traffic$Time_of_Day <- as.factor(Traffic$Time_of_Day)
+Traffic$Traffic_Category <- as.factor(Traffic$Traffic_Category)
+
+# Perform Three-Way ANCOVA for PM2.5 levels
+three_way_ancova_pm25 <- aov(PM2.5 ~ Traffic_Jam + Traffic_Category * Location * Time_of_Day + 
+                             Traffic_Category:Location + Traffic_Category:Time_of_Day, data = Traffic)
+summary(three_way_ancova_pm25)
+
+# Perform Three-Way ANCOVA for NO2 levels
+three_way_ancova_no2 <- aov(NO2 ~ Traffic_Jam + Traffic_Category * Location * Time_of_Day + 
+                            Traffic_Category:Location + Traffic_Category:Time_of_Day, data = Traffic)
+summary(three_way_ancova_no2)
+
+```
+
+
+
+
+
+```{r # ANOVA  for PM2.5 }
+
+# ANOVA for NO2
+no2_model <- aov(PM2.5 ~ Traffic_Category + Location + Time_of_Day, data = Traffic)
+summary(no2_model)
+
+# Post-hoc comparisons
+no2_emm <- emmeans(no2_model, ~ Traffic_Category | Time_of_Day)
+pairs(no2_emm)
+
+
+```
+
+```{r # ANOVA  for NO2 }
+
+# ANOVA for NO2
+no2_model <- aov(NO2 ~ Traffic_Category + Location + Time_of_Day, data = Traffic)
+summary(no2_model)
+
+# Post-hoc comparisons
+no2_emm <- emmeans(no2_model, ~ Traffic_Category | Time_of_Day)
+pairs(no2_emm)
+
+```
+
+
+```{r ## Interaction plot for PM2.5 across time and Traffic Jam }
+# Interaction plot for PM2.5 across time and Traffic Jam
+ggplot(Traffic, aes(x = Traffic_Category, y =  PM2.5, color = Time_of_Day)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ Location) +
+  labs(title = "Interaction Plot for PM2.5 by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average PM2.5 (µg/m³) hourly")
+
+# Interaction plot for NO2 across time and Traffic Jam
+ggplot(Traffic, aes(x = Traffic_Category, y =NO2, color = Time_of_Day)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_wrap(~ Location) +
+  labs(title = "Interaction Plot for NO2 by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average NO2 (µg/m³) hourly")
+
+```
+
+
+
+
+
+```{r # }
+# Load necessary libraries
+
+library(ggplot2)
+library(dplyr)
+if (!require("plotly")) install.packages("plotly")
+library(plotly)
+
+# Convert to factor if not already
+Traffic$Traffic_Category <- factor(Traffic$Traffic_Category, levels = c("Low", "Medium", "High"))
+
+
+# Interactive plot for PM2.5 by Traffic Jam and Time of Day across locations
+p1 <- ggplot(Traffic, aes(x = Traffic_Category, y =  PM2.5, color = Time_of_Day)) +
+  geom_point(size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
+  facet_wrap(~ Location) +
+  labs(title = "Interactive PM2.5 Levels by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average PM2.5 (µg/m³) hourly") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Convert ggplot to plotly for interactivity
+p1_plotly <- ggplotly(p1) %>%
+  layout(hovermode = "closest",
+         title = list(text = "Interactive PM2.5 Levels by Traffic Jam and Time of Day"),
+         legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2))
+
+# Interactive plot for NO2 by Traffic Jam and Time of Day across locations
+p2 <- ggplot(Traffic, aes(x = Traffic_Category, y = NO2 , color = Time_of_Day)) +
+  geom_point(size = 3, alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linetype = "dashed") +
+  facet_wrap(~ Location) +
+  labs(title = "Interactive NO2 Levels by Traffic Jam and Time of Day",
+       x = "Traffic Jam", y = "Average NO2 (µg/m³) hourly") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Convert ggplot to plotly for interactivity
+p2_plotly <- ggplotly(p2) %>%
+  layout(hovermode = "closest",
+         title = list(text = "Interactive NO2 Levels by Traffic Jam and Time of Day"),
+         legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2))
+
+# Display the interactive plots
+p1_plotly
+p2_plotly
+
+```
+
+
+
+# 4. Heatmap for Adjusted Mean PM2.5 by Traffic Jam and Time of Day
+
+
+```{r # }
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Prepare data for heatmap
+heatmap_data <- Traffic %>%
+  group_by(Time_of_Day, Traffic_Category) %>%
+  summarize(mean_PM2.5 = mean(PM2.5, na.rm = TRUE))
+
+# Create ggplot heatmap with adjusted size
+p <- ggplot(heatmap_data, aes(x = Traffic_Category, y = Time_of_Day, fill = mean_PM2.5)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "#56B4E9", high = "#D55E00", name = "Mean PM2.5") +
+  labs(title =          "Heatmap of Adjusted PM2.5 by Traffic Jam and Time of Day",
+       x = "Traffic Jam Category",
+       y = "Time of Day") +
+  theme_minimal(base_size = 15) +
+  theme(
+    plot.title = element_text(hjust = 0.6, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 0.4), # Rotate x-axis labels for better readability
+    legend.position = "bottom" # Move legend to bottom for better layout
+  )
+
+# Convert to interactive plotly with specified width and height
+ggplotly(p, width = 800, height = 600)
+
+
+
+```
+
+```{r # }
+
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Prepare data for heatmap
+heatmap_data <- Traffic %>%
+  group_by(Time_of_Day, Traffic_Category) %>%
+  summarize(mean_NO2 = mean(NO2, na.rm = TRUE))
+
+# Create ggplot heatmap with adjusted size
+p <- ggplot(heatmap_data, aes(x = Traffic_Category, y = Time_of_Day, fill = mean_NO2)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "#56B4E9", high = "#FF0000", name = "Mean NO2") +
+  labs(title =          "Heatmap of Adjusted NO2 by Traffic Jam and Time of Day",
+       x = "Traffic Jam Category",
+       y = "Time of Day") +
+  theme_minimal(base_size = 15) +
+  theme(
+    plot.title = element_text(hjust = 0.6, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 0.4), # Rotate x-axis labels for better readability
+    legend.position = "bottom" # Move legend to bottom for better layout
+  )
+
+# Convert to interactive plotly with specified width and height
+ggplotly(p, width = 800, height = 600)
+
+
+
+```
+
+
+
+
+
+
+```{r # "Interaction of Time of Day and Traffic Jam on PM2.5 Levels"}
+# Load required libraries
+library(ggplot2)
+library(plotly)
+
+# Assuming your dataset is named "Traffic"
+# Create a ggplot for interaction visualization
+p <- ggplot(Traffic, aes(x = Time_of_Day, y = PM2.5, color = Traffic_Jam, group = Traffic_Jam)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction of Time of Day and Traffic Jam on PM2.5 Levels",
+    x = "Time of Day",
+    y = "PM2.5 Levels",
+    color = "Traffic Jam"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+# Enhance the ggplot with Plotly for interactivity
+interactive_plot <- ggplotly(p)
+
+# Display the interactive plot
+interactive_plot
+
+
+
+```
+
+```{r # "Interaction of Time of Day and Traffic Jam on NO2 Levels"}
+# Load required libraries
+library(ggplot2)
+library(plotly)
+
+# Assuming your dataset is named "Traffic"
+# Create a ggplot for interaction visualization
+p <- ggplot(Traffic, aes(x = Time_of_Day, y = NO2, color = Traffic_Jam, group = Traffic_Jam)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction of Time of Day and Traffic Jam on NO2 Levels",
+    x = "Time of Day",
+    y = "No2 Levels",
+    color = "Traffic Jam"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+
+# Enhance the ggplot with Plotly for interactivity
+interactive_plot <- ggplotly(p)
+
+# Display the interactive plot
+interactive_plot
+
+
+
+```
+
+
+
+```{r # }
+
+# Load required libraries
+library(ggplot2)
+library(plotly)
+
+# Assuming your dataset is named "Traffic"
+# Add categories to Traffic_Jam for better readability
+Traffic$Traffic_Jam_Category <- cut(
+  Traffic$Traffic_Jam,
+  breaks = c(-Inf, 3, 5, 7, Inf),
+  labels = c("Low", "Medium", "High", "Very High")
+)
+
+# Create a ggplot for interaction visualization
+p <- ggplot(Traffic, aes(x = Time_of_Day, y = PM2.5, color = Traffic_Jam_Category, group = Traffic_Jam_Category)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction of Time of Day and Traffic Jam on PM2.5 Levels",
+    x = "Time of Day",
+    y = "PM2.5 Levels",
+    color = "Traffic Jam Level"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+# Enhance the ggplot with Plotly for interactivity
+interactive_plot <- ggplotly(p)
+
+# Display the interactive plot
+interactive_plot
+
+
+```
+
+
+
+
+```{r # "Interaction of Time of Day and Traffic Jam on NO2 Levels"}
+
+# Load required libraries
+library(ggplot2)
+library(plotly)
+
+# Assuming your dataset is named "Traffic"
+# Add categories to Traffic_Jam for better readability
+Traffic$Traffic_Jam_Category <- cut(
+  Traffic$Traffic_Jam,
+  breaks = c(-Inf, 3, 5, 7, Inf),
+  labels = c("Low", "Medium", "High", "Very High")
+)
+
+# Create a ggplot for interaction visualization
+p <- ggplot(Traffic, aes(x = Time_of_Day, y = NO2, color = Traffic_Jam_Category, group = Traffic_Jam_Category)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  labs(
+    title = "Interaction of Time of Day and Traffic Jam on NO2 Levels",
+    x = "Time of Day",
+    y = "NO2 Levels",
+    color = "Traffic Jam Level"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    legend.position = "bottom"
+  )
+
+# Enhance the ggplot with Plotly for interactivity
+interactive_plot <- ggplotly(p)
+
+# Display the interactive plot
+interactive_plot
+
+
+
+```
+
+
+
+```{r Time Series Analysis for Time-Dependent Trends  }
+# Load necessary libraries
+library(zoo)
+library(dplyr)
+
+# Rename columns to correct naming issues
+names(Traffic)[names(Traffic) == "PM2.5"] <- "PM2.5"
+
+# Sort data by Time_of_Day to ensure sequential processing
+Traffic <- Traffic %>% arrange(factor(Time_of_Day, levels = c("Morning", "Afternoon", "Evening")))
+
+# Calculate the average PM2.5 for each time of day
+Traffic_avg <- Traffic %>%
+  group_by(Time_of_Day) %>%
+  summarize(PM2.5 = mean(PM2.5, na.rm = TRUE))
+
+# Apply rolling mean (smoothing) on the calculated averages for PM2.5 levels
+# Adjust the rolling mean window to 2 or 3 if data points are sufficient
+Traffic_avg$smoothed_PM2.5 <- rollmean(Traffic_avg$PM2.5, k = 2, fill = NA)
+
+# Plot without smoothing
+plot(factor(Traffic_avg$Time_of_Day, levels = c("Morning", "Afternoon", "Evening")), 
+     Traffic_avg$PM2.5, type = "o", 
+     main = "PM2.5 Levels by Time of Day",
+     xlab = "Time of Day", ylab = "PM2.5 (µg/m³) hourly")
+
+
+```
+
+```{r Time Series Analysis for Time-Dependent Trends  }
+# Load necessary libraries
+library(zoo)
+library(dplyr)
+
+# Rename columns to correct naming issues
+names(Traffic)[names(Traffic) == "NO2"] <- "NO2"
+
+# Sort data by Time_of_Day to ensure sequential processing
+Traffic <- Traffic %>% arrange(factor(Time_of_Day, levels = c("Morning", "Afternoon", "Evening")))
+
+# Calculate the average PM2.5 for each time of day
+Traffic_avg <- Traffic %>%
+  group_by(Time_of_Day) %>%
+  summarize(NO2 = mean(NO2, na.rm = TRUE))
+
+# Apply rolling mean (smoothing) on the calculated averages for PM2.5 levels
+# Adjust the rolling mean window to 2 or 3 if data points are sufficient
+Traffic_avg$smoothed_PM2.5 <- rollmean(Traffic_avg$ NO2, k = 2, fill = NA)
+
+# Plot without smoothing
+plot(factor(Traffic_avg$Time_of_Day, levels = c("Morning", "Afternoon", "Evening")), 
+     Traffic_avg$NO2, type = "o", 
+     main = "NO2 Levels by Time of Day",
+     xlab = "Time of Day", ylab = "NO2 (µg/m³) hourly")
+
+
+```
+
+
+
+```{r Boxplot for PM2.5 by Time of Day }
+# Boxplot for PM2.5 by Time of Day
+boxplot(PM2.5 ~ Time_of_Day, data = Traffic, main = "PM2.5 Levels by Time of Day",
+        xlab = "Time of Day", ylab = "PM2.5 (µg/m³) hourly")
+
+# Boxplot for NO2 by Time of Day
+boxplot(NO2 ~ Time_of_Day, data = Traffic, main = "NO2 Levels by Time of Day",
+        xlab = "Time of Day", ylab = "NO2 (µg/m³) hourly")
+
+
+```
+
+
+# Load the necessary library
+
+```{r # Interactive Boxplot for PM2.5 by Time of Day using plotly }
+library(plotly)
+
+# Interactive Boxplot for PM2.5 by Time of Day
+plot_PM25 <- plot_ly(Traffic, x = ~Time_of_Day, y = ~PM2.5, type = "box", name = "PM2.5") %>%
+  layout(title = "Interactive PM2.5 Levels by Time of Day",
+         xaxis = list(title = "Time of Day"),
+         yaxis = list(title = "PM2.5 (µg/m³) hourly"))
+
+# Interactive Boxplot for NO2 by Time of Day
+plot_NO2 <- plot_ly(Traffic, x = ~Time_of_Day, y = ~NO2, type = "box", name = "NO2") %>%
+  layout(title = "Interactive NO2 Levels by Time of Day",
+         xaxis = list(title = "Time of Day"),
+         yaxis = list(title = "NO2 (µg/m³) hourly"))
+
+# Display both plots
+plot_PM25
+plot_NO2
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
