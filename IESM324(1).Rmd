@@ -1,0 +1,412 @@
+---
+title: "Project:IESM324/ Cryptocurrencies"
+Professor: "Ashot Abrahamyan"
+Students: "Marine Simonyan, Yervand Terteryan,Arman Manukyan"
+date: "2024-12-10"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require("car")) install.packages("car")
+library(car)
+
+if (!require("lsmeans")) install.packages("lsmeans")
+library(lsmeans)
+
+if (!require("dplyr")) install.packages("dplyr")
+library(dplyr)
+
+if (!require("ggplot2")) install.packages("ggplot2")
+library(ggplot2)
+
+if (!require("emmeans")) install.packages("emmeans")
+library(emmeans)
+
+```
+
+
+```{r Cryptocurrencies Average Prices by Season }
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+library(ggthemes)  # For professional theme options
+
+# Define file paths
+bitcoin_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Bitcoin.csv"
+ethereum_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Ethereum.csv"
+solana_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Solana (SOL).csv"
+xrp_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/XRP.csv"
+bnb_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/BNB.csv"
+polkadot_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Polkadot (DOT).csv"
+
+# Load the data
+bitcoin_data <- read.csv(bitcoin_path, stringsAsFactors = FALSE)
+ethereum_data <- read.csv(ethereum_path, stringsAsFactors = FALSE)
+solana_data <- read.csv(solana_path, stringsAsFactors = FALSE)
+xrp_data <- read.csv(xrp_path, stringsAsFactors = FALSE)
+bnb_data <- read.csv(bnb_path, stringsAsFactors = FALSE)
+polkadot_data <- read.csv(polkadot_path, stringsAsFactors = FALSE)
+
+# Define a function to add a 'Season' column based on the 'snapped_at' column
+add_season_column <- function(data, date_column) {
+  if (!date_column %in% names(data)) {
+    stop(paste("'", date_column, "' column not found in DataFrame.", sep = ""))
+  }
+  data[[date_column]] <- as.Date(data[[date_column]], format = "%Y-%m-%d")
+  data$Season <- ifelse(format(data[[date_column]], "%m") %in% c("03", "04", "05"), "Spring",
+                 ifelse(format(data[[date_column]], "%m") %in% c("06", "07", "08"), "Summer",
+                 ifelse(format(data[[date_column]], "%m") %in% c("09", "10", "11"), "Autumn", "Winter")))
+  return(data)
+}
+
+# Add the season column to each dataset
+bitcoin_data <- add_season_column(bitcoin_data, "snapped_at")
+ethereum_data <- add_season_column(ethereum_data, "snapped_at")
+solana_data <- add_season_column(solana_data, "snapped_at")
+xrp_data <- add_season_column(xrp_data, "snapped_at")
+bnb_data <- add_season_column(bnb_data, "snapped_at")
+polkadot_data <- add_season_column(polkadot_data, "snapped_at")
+
+# Calculate average prices by season
+calculate_avg <- function(data) {
+  data %>%
+    group_by(Season) %>%
+    summarise(avg_price = mean(price, na.rm = TRUE))
+}
+
+bitcoin_avg <- calculate_avg(bitcoin_data)
+ethereum_avg <- calculate_avg(ethereum_data)
+solana_avg <- calculate_avg(solana_data)
+xrp_avg <- calculate_avg(xrp_data)
+bnb_avg <- calculate_avg(bnb_data)
+polkadot_avg <- calculate_avg(polkadot_data)
+
+professional_colors <- c(
+  "Spring" = "#4E79A7",  # Muted blue for trust
+  "Summer" = "#59A14F",  # Subtle green for growth
+  "Autumn" = "#E15759",  # Calm red for stability
+  "Winter" = "#76B7B2"   # Soft teal for modernity
+)
+
+
+# Advanced Visualization Function
+plot_seasonal_averages <- function(data, title) {
+  ggplot(data, aes(x = Season, y = avg_price, fill = Season)) +
+    geom_bar(stat = "identity", alpha = 0.9, color = "white") +
+    scale_fill_manual(values = professional_colors) +
+    ggtitle(title) +
+    ylab("Average Price (USD)") +
+    xlab("Season") +
+    theme_economist_white() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      axis.title.x = element_text(size = 14),
+      axis.title.y = element_text(size = 14),
+      axis.text = element_text(size = 12),
+      panel.grid.major = element_line(color = "grey80", linewidth = 0.5),
+      panel.grid.minor = element_blank(),
+      legend.position = "none"
+    )
+}
+
+# Plot for Bitcoin
+print(plot_seasonal_averages(bitcoin_avg, "Bitcoin Average Prices by Season"))
+
+# Plot for Ethereum
+print(plot_seasonal_averages(ethereum_avg, "Ethereum Average Prices by Season"))
+
+# Plot for Solana
+print(plot_seasonal_averages(solana_avg, "Solana Average Prices by Season"))
+
+# Plot for XRP
+print(plot_seasonal_averages(xrp_avg, "XRP Average Prices by Season"))
+
+# Plot for BNB
+print(plot_seasonal_averages(bnb_avg, "BNB Average Prices by Season"))
+
+# Plot for Polkadot
+print(plot_seasonal_averages(polkadot_avg, "Polkadot (DOT) Average Prices by Season"))
+
+# Print the results
+print("Bitcoin Average Prices by Season:")
+print(bitcoin_avg)
+
+print("\nEthereum Average Prices by Season:")
+print(ethereum_avg)
+
+print("\nSolana Average Prices by Season:")
+print(solana_avg)
+
+print("\nXRP Average Prices by Season:")
+print(xrp_avg)
+
+print("\nBNB Average Prices by Season:")
+print(bnb_avg)
+
+print("\nPolkadot (DOT) Average Prices by Season:")
+print(polkadot_avg)
+
+
+
+```
+
+```{r  ANOVA}
+# Add a Season column if missing
+add_season_column <- function(df, date_col = "snapped_at") {
+  if (!date_col %in% colnames(df)) {
+    stop(paste("Column", date_col, "not found in the dataset."))
+  }
+  df[[date_col]] <- as.Date(df[[date_col]], format = "%Y-%m-%d")
+  df$Season <- ifelse(format(df[[date_col]], "%m") %in% c("03", "04", "05"), "Spring",
+               ifelse(format(df[[date_col]], "%m") %in% c("06", "07", "08"), "Summer",
+               ifelse(format(df[[date_col]], "%m") %in% c("09", "10", "11"), "Autumn", "Winter")))
+  return(df)
+}
+
+# Add Season column to each dataset
+bitcoin_data <- add_season_column(bitcoin_data)
+ethereum_data <- add_season_column(ethereum_data)
+solana_data <- add_season_column(solana_data)
+xrp_data <- add_season_column(xrp_data)
+bnb_data <- add_season_column(bnb_data)
+polkadot_data <- add_season_column(polkadot_data)
+
+# Verify the structure of the datasets
+str(bitcoin_data)  # Repeat for other datasets if needed
+
+# Redefine prepare_anova_data function
+prepare_anova_data <- function(df, season_col = "Season", price_col = "price") {
+  if (!season_col %in% colnames(df)) {
+    stop(paste("Column", season_col, "not found in the dataset."))
+  }
+  if (!price_col %in% colnames(df)) {
+    stop(paste("Column", price_col, "not found in the dataset."))
+  }
+  split(df[[price_col]], df[[season_col]])
+}
+
+# Rerun preparation and ANOVA tests
+bitcoin_anova_data <- prepare_anova_data(bitcoin_data)
+ethereum_anova_data <- prepare_anova_data(ethereum_data)
+solana_anova_data <- prepare_anova_data(solana_data)
+xrp_anova_data <- prepare_anova_data(xrp_data)
+bnb_anova_data <- prepare_anova_data(bnb_data)
+polkadot_anova_data <- prepare_anova_data(polkadot_data)
+
+# Perform ANOVA again
+bitcoin_anova <- aov(price ~ Season, data = bitcoin_data)
+ethereum_anova <- aov(price ~ Season, data = ethereum_data)
+solana_anova <- aov(price ~ Season, data = solana_data)
+xrp_anova <- aov(price ~ Season, data = xrp_data)
+bnb_anova <- aov(price ~ Season, data = bnb_data)
+polkadot_anova <- aov(price ~ Season, data = polkadot_data)
+
+# Extract ANOVA results into a data frame
+anova_results <- data.frame(
+  Cryptocurrency = c("Bitcoin", "Ethereum", "Solana", "XRP", "BNB", "Polkadot"),
+  `F-Statistic` = c(
+    summary(bitcoin_anova)[[1]]$`F value`[1],
+    summary(ethereum_anova)[[1]]$`F value`[1],
+    summary(solana_anova)[[1]]$`F value`[1],
+    summary(xrp_anova)[[1]]$`F value`[1],
+    summary(bnb_anova)[[1]]$`F value`[1],
+    summary(polkadot_anova)[[1]]$`F value`[1]
+  ),
+  `P-Value` = c(
+    summary(bitcoin_anova)[[1]]$`Pr(>F)`[1],
+    summary(ethereum_anova)[[1]]$`Pr(>F)`[1],
+    summary(solana_anova)[[1]]$`Pr(>F)`[1],
+    summary(xrp_anova)[[1]]$`Pr(>F)`[1],
+    summary(bnb_anova)[[1]]$`Pr(>F)`[1],
+    summary(polkadot_anova)[[1]]$`Pr(>F)`[1]
+  )
+)
+
+# Display the results
+print(anova_results)
+
+
+```
+```{r ANOVA plot}
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
+
+# Define file paths
+bitcoin_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Bitcoin.csv"
+ethereum_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Ethereum.csv"
+solana_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Solana (SOL).csv"
+xrp_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/XRP.csv"
+bnb_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/BNB.csv"
+polkadot_path <- "C:/Users/arman.manoukyan/OneDrive/Desktop/STAT DATA/Polkadot (DOT).csv"
+
+# Load datasets
+bitcoin_data <- read.csv(bitcoin_path, stringsAsFactors = FALSE)
+ethereum_data <- read.csv(ethereum_path, stringsAsFactors = FALSE)
+solana_data <- read.csv(solana_path, stringsAsFactors = FALSE)
+xrp_data <- read.csv(xrp_path, stringsAsFactors = FALSE)
+bnb_data <- read.csv(bnb_path, stringsAsFactors = FALSE)
+polkadot_data <- read.csv(polkadot_path, stringsAsFactors = FALSE)
+
+# Add a Season column if missing
+add_season_column <- function(df, date_col = "snapped_at") {
+  if (!date_col %in% colnames(df)) {
+    stop(paste("Column", date_col, "not found in the dataset."))
+  }
+  df[[date_col]] <- as.Date(df[[date_col]], format = "%Y-%m-%d")
+  df$Season <- ifelse(format(df[[date_col]], "%m") %in% c("03", "04", "05"), "Spring",
+               ifelse(format(df[[date_col]], "%m") %in% c("06", "07", "08"), "Summer",
+               ifelse(format(df[[date_col]], "%m") %in% c("09", "10", "11"), "Autumn", "Winter")))
+  return(df)
+}
+
+# Add Season column to each dataset
+bitcoin_data <- add_season_column(bitcoin_data)
+ethereum_data <- add_season_column(ethereum_data)
+solana_data <- add_season_column(solana_data)
+xrp_data <- add_season_column(xrp_data)
+bnb_data <- add_season_column(bnb_data)
+polkadot_data <- add_season_column(polkadot_data)
+
+# Define a function to prepare data for ANOVA
+prepare_anova_data <- function(df, season_col = "Season", price_col = "price") {
+  if (!season_col %in% colnames(df)) {
+    stop(paste("Column", season_col, "not found in the dataset."))
+  }
+  if (!price_col %in% colnames(df)) {
+    stop(paste("Column", price_col, "not found in the dataset."))
+  }
+  split(df[[price_col]], df[[season_col]])
+}
+
+# Rerun preparation and ANOVA tests
+bitcoin_anova_data <- prepare_anova_data(bitcoin_data)
+ethereum_anova_data <- prepare_anova_data(ethereum_data)
+solana_anova_data <- prepare_anova_data(solana_data)
+xrp_anova_data <- prepare_anova_data(xrp_data)
+bnb_anova_data <- prepare_anova_data(bnb_data)
+polkadot_anova_data <- prepare_anova_data(polkadot_data)
+
+# Perform ANOVA again
+bitcoin_anova <- aov(price ~ Season, data = bitcoin_data)
+ethereum_anova <- aov(price ~ Season, data = ethereum_data)
+solana_anova <- aov(price ~ Season, data = solana_data)
+xrp_anova <- aov(price ~ Season, data = xrp_data)
+bnb_anova <- aov(price ~ Season, data = bnb_data)
+polkadot_anova <- aov(price ~ Season, data = polkadot_data)
+
+# Extract ANOVA results into a data frame
+anova_results <- data.frame(
+  Cryptocurrency = c("Bitcoin", "Ethereum", "Solana", "XRP", "BNB", "Polkadot"),
+  F_Statistic = c(
+    summary(bitcoin_anova)[[1]]$`F value`[1],
+    summary(ethereum_anova)[[1]]$`F value`[1],
+    summary(solana_anova)[[1]]$`F value`[1],
+    summary(xrp_anova)[[1]]$`F value`[1],
+    summary(bnb_anova)[[1]]$`F value`[1],
+    summary(polkadot_anova)[[1]]$`F value`[1]
+  ),
+  P_Value = c(
+    summary(bitcoin_anova)[[1]]$`Pr(>F)`[1],
+    summary(ethereum_anova)[[1]]$`Pr(>F)`[1],
+    summary(solana_anova)[[1]]$`Pr(>F)`[1],
+    summary(xrp_anova)[[1]]$`Pr(>F)`[1],
+    summary(bnb_anova)[[1]]$`Pr(>F)`[1],
+    summary(polkadot_anova)[[1]]$`Pr(>F)`[1]
+  )
+)
+
+# Display the results
+print(anova_results)
+
+# Visualize the ANOVA results using ggplot2
+anova_results %>%
+  ggplot(aes(x = reorder(Cryptocurrency, F_Statistic), y = F_Statistic, fill = Cryptocurrency)) +
+  geom_bar(stat = "identity", color = "black", alpha = 0.8) +
+  geom_text(aes(label = paste0("F=", round(F_Statistic, 2), "\nP=", signif(P_Value, 3))),
+            vjust = -0.3, size = 4, fontface = "bold") +
+  theme_classic(base_size = 14) +
+  labs(
+    title = "ANOVA Results for Cryptocurrencies",
+    subtitle = "Analysis of variance across seasonal averages",
+    x = "Cryptocurrency",
+    y = "F-Statistic"
+  ) +
+  scale_fill_manual(values = c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b")) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1, face = "bold"),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    legend.position = "none"
+  ) +
+  ylim(0, 120)
+
+
+
+```
+
+
+```{r}
+
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+
+# Function to process and align data frames
+process_data <- function(file_path, crypto_name) {
+  data <- read.csv(file_path)
+  data <- data %>%
+    mutate(
+      snapped_at = as.Date(snapped_at),
+      Season = case_when(
+        format(snapped_at, "%m") %in% c("12", "01", "02") ~ "Winter",
+        format(snapped_at, "%m") %in% c("03", "04", "05") ~ "Spring",
+        format(snapped_at, "%m") %in% c("06", "07", "08") ~ "Summer",
+        TRUE ~ "Fall"
+      ),
+      Cryptocurrency = crypto_name
+    ) %>%
+    select(snapped_at, price, Season, Cryptocurrency) # Keep only relevant columns
+  return(data)
+}
+
+# Process each cryptocurrency data frame
+bitcoin_data <- process_data(bitcoin_path, "Bitcoin")
+ethereum_data <- process_data(ethereum_path, "Ethereum")
+solana_data <- process_data(solana_path, "Solana")
+xrp_data <- process_data(xrp_path, "XRP")
+bnb_data <- process_data(bnb_path, "BNB")
+polkadot_data <- process_data(polkadot_path, "Polkadot")
+
+# Combine all processed data
+combined_data <- bind_rows(bitcoin_data, ethereum_data, solana_data, xrp_data, bnb_data, polkadot_data)
+
+# Check for alignment and structure
+str(combined_data)
+
+# Calculate average prices by season and cryptocurrency
+avg_prices <- combined_data %>%
+  group_by(Cryptocurrency, Season) %>%
+  summarise(avg_price = mean(price, na.rm = TRUE), .groups = "drop")
+
+# Print average prices
+print(avg_prices)
+
+# Visualize using boxplots
+ggplot(combined_data, aes(x = Season, y = price, fill = Cryptocurrency)) +
+  geom_boxplot() +
+  facet_wrap(~ Cryptocurrency, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    title = "Cryptocurrency Prices Across Seasons",
+    x = "Season",
+    y = "Price"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+
